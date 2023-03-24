@@ -7,18 +7,21 @@ using System.Threading.Tasks;
 
 namespace Практика_1
 {
-    class AffineCipher
+    class AffineRecurrentChipher
     {
-        int n = 32;
+        int n = 33;
         string RALF = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
         string Ralf = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя";
-        public AffineCipher() { }
-        public void Encrypt(int a, int b, string path)
+        public AffineRecurrentChipher() { }
+        public void Encrypt(int[,] k, string path)
         {
-            if (IsCoprime(a, n) == false)
+            for(int i = 0; i < 2; i++)
             {
-                Console.WriteLine($"а={a} и n={n} невзаимно простые числа");
-                return;
+                if (IsCoprime(k[0,i], n) == false)
+                {
+                    Console.WriteLine($"а={k[0, i]} и n={n} невзаимно простые числа");
+                    return;
+                }
             }
             string newpath = GetNewPath(path) + "cipher.txt";
             using (StreamWriter newfile = new StreamWriter(newpath, false, Encoding.UTF8))
@@ -28,6 +31,7 @@ namespace Практика_1
 
             using (StreamReader file = new StreamReader(path, Encoding.UTF8))
             {
+                int i = 0;
                 while (file.Peek() != -1)
                 {
                     int index;
@@ -39,11 +43,94 @@ namespace Практика_1
                         {
                             newfile.Write(' ');
                         }
+                        continue;
+                    }
+                    if (i >= 2)
+                    {
+                        int temp1 = Modulo(k[0, 1] * k[0, 0]);
+                        int temp2 = Modulo(k[1, 1] + k[1, 0]);
+                        k[0, 0] = k[0, 1];
+                        k[1, 0] = k[1, 1];
+                        k[0, 1] = temp1;
+                        k[1, 1] = temp2;
                     }
                     if (RALF.IndexOf(Char) >= 0)
                     {
                         index = RALF.IndexOf(Char);
-                        newindex = a * index + b;
+                        if (i < 2) newindex = k[0, i] * index + k[1, i]; 
+                        else newindex = k[0, 1] * index + k[1, 1];
+                        newindex = Modulo(newindex);
+                        using (StreamWriter newfile = new StreamWriter(newpath, true, Encoding.UTF8))
+                        {
+                            newfile.Write(RALF[newindex]);
+                            Console.WriteLine(RALF[newindex]);
+                        }
+                    }
+                    else if (Ralf.IndexOf(Char) >= 0)
+                    {
+                        index = Ralf.IndexOf(Char);
+                        if (i < 2) newindex = k[0, i] * index + k[1, i];
+                        else newindex = k[0, 1] * index + k[1, 1];
+                        newindex = Modulo(newindex);
+                        using (StreamWriter newfile = new StreamWriter(newpath, true, Encoding.UTF8))
+                        {
+                            newfile.Write(Ralf[newindex]);
+                            Console.WriteLine(Ralf[newindex]);
+                        }
+                    }
+                    i++;
+                }
+            }
+        }
+        public void Decrypt(int[,] k, string path)
+        {
+            for (int i = 0; i < 2; i++)
+            {
+                if (IsCoprime(k[0, i], n) == false)
+                {
+                    Console.WriteLine($"а={k[0, i]} и n={n} невзаимно простые числа");
+                    return;
+                }
+            }
+            string newpath = GetNewPath(path) + "opentext.txt";
+            using (StreamWriter newfile = new StreamWriter(newpath, false, Encoding.UTF8))
+            {
+                newfile.Close();
+            }
+
+            using (StreamReader file = new StreamReader(path, Encoding.UTF8))
+            {
+                int i = 0;
+                while (file.Peek() != -1)
+                {
+                    int index;
+                    int newindex;
+                    char Char = (char)file.Read();
+                    int a_1 = 0;
+                    if (Char == ' ')
+                    {
+                        using (StreamWriter newfile = new StreamWriter(newpath, true, Encoding.UTF8))
+                        {
+                            newfile.Write(' ');
+                        }
+                        continue;
+                    }
+                    if (i >= 2)
+                    {
+                        int temp1 = Modulo(k[0, 1] * k[0, 0]);
+                        int temp2 = Modulo(k[1, 1] + k[1, 0]);
+                        k[0, 0] = k[0, 1];
+                        k[1, 0] = k[1, 1];
+                        k[0, 1] = temp1;
+                        k[1, 1] = temp2;
+                    }
+                    if (i < 2) a_1 = Evclid(k[0, i]);
+                    else a_1 = Evclid(k[0, 1]);
+                    if (RALF.IndexOf(Char) >= 0)
+                    {
+                        index = RALF.IndexOf(Char);
+                        if (i < 2) newindex = (index - k[1,i]) * a_1;
+                        else newindex = (index - k[1, 1]) * a_1;
                         newindex = Modulo(newindex);
                         using (StreamWriter newfile = new StreamWriter(newpath, true, Encoding.UTF8))
                         {
@@ -53,67 +140,15 @@ namespace Практика_1
                     else if (Ralf.IndexOf(Char) >= 0)
                     {
                         index = Ralf.IndexOf(Char);
-                        newindex = a * index + b;
+                        if (i < 2) newindex = (index - k[1, i]) * a_1;
+                        else newindex = (index - k[1, 1]) * a_1;
                         newindex = Modulo(newindex);
                         using (StreamWriter newfile = new StreamWriter(newpath, true, Encoding.UTF8))
                         {
                             newfile.Write(Ralf[newindex]);
                         }
                     }
-                }
-            }
-        }
-        public void Decrypt(int a, int b, string path)
-        {
-            if (IsCoprime(a, n) == false)
-            {
-                Console.WriteLine($"а={a} и n={n} невзаимно простые числа");
-                return;
-            }
-            int a_1 = Evclid(a);
-            string newpath = GetNewPath(path) + "opentext.txt";
-            using (StreamWriter newfile = new StreamWriter(newpath, false, Encoding.UTF8))
-            {
-                newfile.Close();
-            }
-
-            using (StreamReader file = new StreamReader(path, Encoding.UTF8))
-            {
-                while (file.Peek() != -1)
-                {
-                    int index;
-                    int newindex;
-                    char Char = (char)file.Read();
-                    if ()
-                    {
-                        using (StreamWriter newfile = new StreamWriter(newpath, true, Encoding.UTF8))
-                        {
-                            newfile.Write(' ');
-                        }
-                    }
-                    else
-                    {
-                        if (RALF.IndexOf(Char) >= 0)
-                        {
-                            index = RALF.IndexOf(Char);
-                            newindex = (index - b) * a_1;
-                            newindex = Modulo(newindex);
-                            using (StreamWriter newfile = new StreamWriter(newpath, true, Encoding.UTF8))
-                            {
-                                newfile.Write(RALF[newindex]);
-                            }
-                        }
-                        else if (Ralf.IndexOf(Char) >= 0)
-                        {
-                            index = Ralf.IndexOf(Char);
-                            newindex = (index - b) * a_1;
-                            newindex = Modulo(newindex);
-                            using (StreamWriter newfile = new StreamWriter(newpath, true, Encoding.UTF8))
-                            {
-                                newfile.Write(Ralf[newindex]);
-                            }
-                        }
-                    }
+                    i++;
                 }
             }
         }
