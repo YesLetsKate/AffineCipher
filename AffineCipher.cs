@@ -84,7 +84,7 @@ namespace Практика_1
                     int index;
                     int newindex;
                     char Char = (char)file.Read();
-                    if ()
+                    if (Char == ' ')
                     {
                         using (StreamWriter newfile = new StreamWriter(newpath, true, Encoding.UTF8))
                         {
